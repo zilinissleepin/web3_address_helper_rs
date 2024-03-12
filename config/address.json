@@ -1,0 +1,14 @@
+[
+    {
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "label": "WBTC",
+        "chain": "ETH",
+        "description": "wrapped bitcoin"
+    },
+    {
+        "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+        "label": "wstETH",
+        "chain": "ETH",
+        "description": "First: Wrapped liquid staked Ether 2.0. wstETH is a wrapped version of stETH. Due to the nature of Lido, the amount of stETH on your balance is not constant - it changes daily as staking rewards come in. As some DeFi protocols require a constant balance mechanism for tokens, wstETH keeps your balance of stETH fixed and uses an underlying share system to reflect your staking rewards."
+    }
+]
