@@ -1,12 +1,11 @@
 use hotwatch::{Event as HotWatchEvent, EventKind, Hotwatch};
 use notify_rust::Notification;
-use rdev::{listen, Event};
+use rdev::{listen, Event, EventType, Key};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::sync::{Arc, Mutex};
-use std::thread;
-use std::{thread::sleep, time::Duration};
+use std::{thread, thread::sleep, time::Duration};
 
 mod appl_script;
 
@@ -43,6 +42,8 @@ fn main() {
     let _ = &*ADDRESS_DICT;
     let _ = &*ARGS;
 
+    let mut modifiers = HashSet::new();
+
     let address_dict = Arc::new(Mutex::new(init_address_dict(&get_config_path())));
 
     let writer_address_dict = Arc::clone(&address_dict);
@@ -58,36 +59,51 @@ fn main() {
         let callback = move |event: Event| {
             // println!("My callback {:?}", event);
             let data = reader_address_dict.lock().unwrap();
-            match event.name {
-                Some(string) => {
-                    if string.as_str() == "ƒ" {
-                        match appl_script::get_selected_text() {
-                            Ok(text) => {
-                                let f = || get_address_label(&text, &data);
-                                if let Ok(note) = f() {
-                                    Notification::new()
-                                        .summary("web3_address_helper_rs")
-                                        .body(format!("{}", note).as_str())
-                                        .icon("firefox")
-                                        .show()
-                                        .unwrap();
-                                } else {
-                                    Notification::new()
-                                        .summary("web3_address_helper_rs")
-                                        .body(format!("Address Not Found").as_str())
-                                        .icon("firefox")
-                                        .show()
-                                        .unwrap();
+            match event.event_type {
+                EventType::KeyPress(key) => {
+                    match key {
+                        Key::MetaLeft | Key::MetaRight => {
+                            modifiers.insert(Key::MetaLeft);
+                        }
+                        Key::KeyJ => {
+                            if modifiers.contains(&Key::MetaLeft) {
+                                match appl_script::get_selected_text() {
+                                    Ok(text) => {
+                                        let f = || get_address_label(&text, &data);
+                                        if let Ok(note) = f() {
+                                            Notification::new()
+                                                .summary("web3_address_helper_rs")
+                                                .body(format!("{}", note).as_str())
+                                                .icon("firefox")
+                                                .show()
+                                                .unwrap();
+                                        } else {
+                                            Notification::new()
+                                                .summary("web3_address_helper_rs")
+                                                .body(format!("Address Not Found").as_str())
+                                                .icon("firefox")
+                                                .show()
+                                                .unwrap();
+                                        }
+                                    }
+                                    Err(err) => {
+                                        eprintln!("Error: {}", err);
+                                    }
                                 }
                             }
-                            Err(err) => {
-                                eprintln!("Error: {}", err);
-                            }
                         }
-                    } else {
+                        _ => {}
                     }
                 }
-                None => (),
+                EventType::KeyRelease(key) => {
+                    match key {
+                        Key::MetaLeft | Key::MetaRight => {
+                            modifiers.remove(&Key::MetaLeft);
+                        }
+                        _ => {}
+                    }
+                }
+                _ => (),
             }
         };
 
@@ -130,7 +146,7 @@ fn get_address_label(
         println!("{}", get_msg_from_memo(memo_addr));
         return Ok(get_msg_from_memo(memo_addr));
     } else {
-        println!("Not Found");
+        println!("{} Not Found", parsed_address);
         return Err("Not Found".to_string());
     }
 }
