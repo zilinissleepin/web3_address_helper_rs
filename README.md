@@ -3,11 +3,11 @@
 ## install
 
 1. Install Rust firstly.
-2. In the repo directory, run command:
-    `cargo build release`
-    `cd ./target/release`
-3. Create a address.json just like the `./config/address.json` in the repo.
-4. `nohup ./web3_address_helper_rs --config <CONFIG_PATH> >/dev/null 2>&1 &`
+2. Step in the repo directory
+3. `cargo build release`
+4. `cd ./target/release`
+5. Create a address.json just like the `./config/address.json` in the repo.
+6. `nohup ./web3_address_helper_rs --config <CONFIG_PATH> >/dev/null 2>&1 &`
 
 ## some issue
 
