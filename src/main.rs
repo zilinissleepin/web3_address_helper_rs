@@ -69,17 +69,24 @@ fn main() {
                             if modifiers.contains(&Key::MetaLeft) {
                                 match appl_script::get_selected_text() {
                                     Ok(text) => {
+                                        let show_text = if text.len() >= 18 {
+                                            let prefix: String = text.chars().take(10).collect();
+                                            let suffix: String = text.chars().rev().take(8).collect::<String>().chars().rev().collect();
+                                            format!("{}...{}", prefix, suffix)
+                                        } else {
+                                            text.clone()
+                                        } ;
                                         let f = || get_address_label(&text, &data);
                                         if let Ok(note) = f() {
                                             Notification::new()
-                                                .summary("web3_address_helper_rs")
+                                                .summary(format!("{}", show_text).as_str())
                                                 .body(format!("{}", note).as_str())
                                                 .icon("firefox")
                                                 .show()
                                                 .unwrap();
                                         } else {
                                             Notification::new()
-                                                .summary("web3_address_helper_rs")
+                                                .summary(format!("{}", show_text).as_str())
                                                 .body(format!("Address Not Found").as_str())
                                                 .icon("firefox")
                                                 .show()
