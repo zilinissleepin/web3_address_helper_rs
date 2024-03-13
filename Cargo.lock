@@ -5112,6 +5112,7 @@ dependencies = [
  "clap",
  "ethers",
  "hotwatch",
+ "mac-notification-sys",
  "notify-rust",
  "once_cell",
  "rdev",

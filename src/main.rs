@@ -1,5 +1,6 @@
 use hotwatch::{Event as HotWatchEvent, EventKind, Hotwatch};
-use notify_rust::Notification;
+use notify_rust::{set_application, Notification};
+use mac_notification_sys::get_bundle_identifier_or_default;
 use rdev::{listen, Event, EventType, Key};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -42,6 +43,11 @@ fn main() {
     let _ = &*ADDRESS_DICT;
     let _ = &*ARGS;
 
+    let bundle_id = get_bundle_identifier_or_default("Spotlight");
+    if let Err(_) = set_application(bundle_id.as_str()) {
+        println!("Failed to set application")
+    }
+
     let mut modifiers = HashSet::new();
 
     let address_dict = Arc::new(Mutex::new(init_address_dict(&get_config_path())));
@@ -60,57 +66,58 @@ fn main() {
             // println!("My callback {:?}", event);
             let data = reader_address_dict.lock().unwrap();
             match event.event_type {
-                EventType::KeyPress(key) => {
-                    match key {
-                        Key::MetaLeft | Key::MetaRight => {
-                            modifiers.insert(Key::MetaLeft);
-                        }
-                        Key::KeyJ => {
-                            if modifiers.contains(&Key::MetaLeft) {
-                                match appl_script::get_selected_text() {
-                                    Ok(text) => {
-                                        let show_text = if text.len() >= 18 {
-                                            let prefix: String = text.chars().take(10).collect();
-                                            let suffix: String = text.chars().rev().take(8).collect::<String>().chars().rev().collect();
-                                            format!("{}...{}", prefix, suffix)
-                                        } else {
-                                            text.clone()
-                                        } ;
-                                        let f = || get_address_label(&text, &data);
-                                        if let Ok(note) = f() {
-                                            Notification::new()
-                                                .summary(format!("{}", show_text).as_str())
-                                                .body(format!("{}", note).as_str())
-                                                .icon("firefox")
-                                                .show()
-                                                .unwrap();
-                                        } else {
-                                            Notification::new()
-                                                .summary(format!("{}", show_text).as_str())
-                                                .body(format!("Address Not Found").as_str())
-                                                .icon("firefox")
-                                                .show()
-                                                .unwrap();
-                                        }
+                EventType::KeyPress(key) => match key {
+                    Key::MetaLeft | Key::MetaRight => {
+                        modifiers.insert(Key::MetaLeft);
+                    }
+                    Key::KeyJ => {
+                        if modifiers.contains(&Key::MetaLeft) {
+                            match appl_script::get_selected_text() {
+                                Ok(text) => {
+                                    let show_text = if text.len() >= 18 {
+                                        let prefix: String = text.chars().take(10).collect();
+                                        let suffix: String = text
+                                            .chars()
+                                            .rev()
+                                            .take(8)
+                                            .collect::<String>()
+                                            .chars()
+                                            .rev()
+                                            .collect();
+                                        format!("{}...{}", prefix, suffix)
+                                    } else {
+                                        text.clone()
+                                    };
+                                    let f = || get_address_label(&text, &data);
+                                    if let Ok(note) = f() {
+                                        Notification::new()
+                                            .summary(format!("{}", show_text).as_str())
+                                            .body(format!("{}", note).as_str())
+                                            .show()
+                                            .unwrap();
+                                    } else {
+                                        Notification::new()
+                                            .summary(format!("{}", show_text).as_str())
+                                            .body(format!("Address Not Found").as_str())
+                                            .show()
+                                            .unwrap();
                                     }
-                                    Err(err) => {
-                                        eprintln!("Error: {}", err);
-                                    }
+                                }
+                                Err(err) => {
+                                    eprintln!("Error: {}", err);
                                 }
                             }
                         }
-                        _ => {}
                     }
-                }
-                EventType::KeyRelease(key) => {
-                    match key {
-                        Key::MetaLeft | Key::MetaRight => {
-                            modifiers.remove(&Key::MetaLeft);
-                        }
-                        _ => {}
+                    _ => {}
+                },
+                EventType::KeyRelease(key) => match key {
+                    Key::MetaLeft | Key::MetaRight => {
+                        modifiers.remove(&Key::MetaLeft);
                     }
-                }
-                _ => {},
+                    _ => {}
+                },
+                _ => {}
             }
         };
 
@@ -134,7 +141,7 @@ fn watch_and_reload(path: String, data: Arc<Mutex<HashMap<String, MemoAddress>>>
             }
         })
         .expect("failed to watch file!");
-    
+
     loop {
         sleep(Duration::from_secs(5))
     }
