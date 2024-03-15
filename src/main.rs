@@ -3,10 +3,14 @@ use mac_notification_sys::get_bundle_identifier_or_default;
 use notify_rust::{set_application, Notification};
 use rdev::{listen, Event, EventType, Key};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::fs;
-use std::sync::{Arc, Mutex};
-use std::{thread, thread::sleep, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    sync::{Arc, Mutex},
+    thread,
+    thread::sleep,
+    time::Duration,
+};
 
 mod appl_script;
 
@@ -32,7 +36,7 @@ struct MemoAddress {
 
 use once_cell::sync::Lazy;
 
-static ARGS: Lazy<String> = Lazy::new(|| get_config_path());
+static ARGS: Lazy<String> = Lazy::new(get_config_path);
 
 static ADDRESS_DICT: Lazy<HashMap<String, MemoAddress>> = Lazy::new(|| {
     let config = get_config_path();
@@ -44,7 +48,7 @@ fn main() {
     let _ = &*ARGS;
 
     let bundle_id = get_bundle_identifier_or_default("Spotlight");
-    if let Err(_) = set_application(bundle_id.as_str()) {
+    if set_application(bundle_id.as_str()).is_err() {
         println!("Failed to set application")
     }
 
@@ -91,14 +95,14 @@ fn main() {
                                     let f = || get_address_label(&text, &data);
                                     if let Ok(note) = f() {
                                         Notification::new()
-                                            .summary(format!("{}", show_text).as_str())
-                                            .body(format!("{}", note).as_str())
+                                            .summary(show_text.as_str())
+                                            .body(note.as_str())
                                             .show()
                                             .unwrap();
                                     } else {
                                         Notification::new()
-                                            .summary(format!("{}", show_text).as_str())
-                                            .body(format!("Address Not Found").as_str())
+                                            .summary(show_text.as_str())
+                                            .body("Address Not Found")
                                             .show()
                                             .unwrap();
                                     }
@@ -148,20 +152,20 @@ fn watch_and_reload(path: String, data: Arc<Mutex<HashMap<String, MemoAddress>>>
 }
 
 fn get_address_label(
-    address: &String,
+    address: &str,
     address_dict: &HashMap<String, MemoAddress>,
 ) -> Result<String, String> {
     let parsed_address = address
         .replace("0x", "")
         .trim()
         .to_lowercase()
-        .replace(" ", "");
+        .replace(' ', "");
     if let Some(memo_addr) = address_dict.get(&parsed_address) {
         println!("{}", get_msg_from_memo(memo_addr));
-        return Ok(get_msg_from_memo(memo_addr));
+        Ok(get_msg_from_memo(memo_addr))
     } else {
         println!("{} Not Found", parsed_address);
-        return Err("Not Found".to_string());
+        Err("Not Found".to_string())
     }
 }
 
@@ -187,7 +191,7 @@ fn init_address_dict(config_path: &String) -> HashMap<String, MemoAddress> {
             .replace("0x", "")
             .trim()
             .to_lowercase()
-            .replace(" ", "");
+            .replace(' ', "");
         address_dict.insert(parsed_address, memo_addr.clone());
     }
 
