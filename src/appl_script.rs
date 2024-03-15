@@ -53,10 +53,7 @@ pub fn get_selected_text() -> Result<String, std::io::Error> {
 }
 
 fn run_applescript(script: &str) -> Result<Output, std::io::Error> {
-    Command::new("osascript")
-        .arg("-e")
-        .arg(script)
-        .output()
+    Command::new("osascript").arg("-e").arg(script).output()
 }
 
 #[cfg(test)]

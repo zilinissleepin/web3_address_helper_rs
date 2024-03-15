@@ -1,6 +1,6 @@
 use hotwatch::{Event as HotWatchEvent, EventKind, Hotwatch};
-use notify_rust::{set_application, Notification};
 use mac_notification_sys::get_bundle_identifier_or_default;
+use notify_rust::{set_application, Notification};
 use rdev::{listen, Event, EventType, Key};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
